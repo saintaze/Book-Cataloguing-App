@@ -1,3 +1,5 @@
+import { Book } from '../models/book.model';
+
 const template = document.createElement('template');
 template.innerHTML = `
   <style>
@@ -8,131 +10,84 @@ class RootComponent extends HTMLElement {
   constructor() {
     super();
     this.appendChild(template.content.cloneNode(true));
-    this._activateLinks();    
-    
-    this._cartItems = [];
-    this._cartTotalCount = 0;
-    
-    const $cart = document.querySelector('.cart');
-    this.addEventListener('juicesBtnClick', this._childBtnClick.bind(this)); 
-    this.addEventListener('shopBtnClick', this._childBtnClick.bind(this));
-    this.addEventListener('buyJuiceClick', this._buyJuiceClick.bind(this));
-    this.addEventListener('itemPurchase', this._itemPurchase.bind(this));
-    this.addEventListener('itemBrowse', this._buyJuiceClick.bind(this));
-    $cart.addEventListener('click', this._cartClick.bind(this));
-    this.addEventListener('itemNameClick', this._buyJuiceClick.bind(this));
-    this.addEventListener('itemCancelClick', this._itemCancelClick.bind(this));
-    this.addEventListener('cartInputChange', this._cartInputChange.bind(this));
-    
-    const initialView = document.createElement('app-about');
-    this._render(initialView);
+    this._books = this._getData();
+
+    const $modalAddBookBtn = document.querySelector('.form-book-add-btn');
+
+    $modalAddBookBtn.addEventListener('click', this._initBook.bind(this));
+    this.addEventListener('bookDelete', this._deleteBook.bind(this));
+    this.addEventListener('bookReadToggle', this._bookReadToggle.bind(this));
+
+    this._render()
   }
 
-  _cartInputChange(e){    
-    const $cartCount = document.querySelector('.cart__item-count');
-    $cartCount.textContent = '';
-    this._cartTotalCount = 0;
-    this._cartItems.forEach(i => {
-      if(i.type === e.detail.type){
-        i.count = e.detail.count;
-      }
-      this._cartTotalCount += Number(i.count)
-    })
-    $cartCount.textContent = this._cartTotalCount > 100 ? '100+' : this._cartTotalCount;
-
-    const view = this._initView('/cart');
-    view.setAttribute('posY', localStorage.getItem('posY'));
-    this._render(view);
+  _deleteBook(e){
+    this._books.splice(e.detail, 1);
+    this._setData(this._books);
+    this._render();
   }
 
-  _itemCancelClick(e){
-    this._deductCartTotalCount(e.detail.count);
-    this._cartItems = this._cartItems.filter(i => i.type !== e.detail.path.slice(1));
-    const view = this._initView('/cart');
-    this._render(view);
+  _toggleTableVisible(){
+    if(this._books.length === 0){
+      document.querySelector('.table').style.opacity = '0';
+    }else{
+      document.querySelector('.table').style.opacity = '1';
+    }
+  }
+
+  _bookReadToggle(e){
+    const {read, index} = e.detail;
+    this._books[index].read = read;
+    this._render();
+  }
+
+  _createBook(b, i){
+    const $book = document.createElement('app-book');
+    $book.setAttribute('title', b.title);
+    $book.setAttribute('author', b.author);
+    $book.setAttribute('pages', b.pages);
+    $book.setAttribute('read', b.read);
+    $book.setAttribute('index', i);
+    return $book;
   }
   
-  _deductCartTotalCount(count){
-    this._cartTotalCount -= count;
-    document.querySelector('.cart__item-count').textContent = this._cartTotalCount;
+  _initBook(e){
+    const {value: $title} = document.querySelector('.title-input');
+    const {value: $author} = document.querySelector('.author-input');
+    const {value: $pages} = document.querySelector('.pages-input');
+    const {checked: $read} = document.querySelector('.read-input');
+    if(!$title, !$author, !$pages) return;
+    if(+$pages <= 0 || !Number.isInteger(+$pages)) return;
+ 
+    const newBook = new Book($title, $author, +$pages, $read);
+    this._books.push(newBook);
+    this._setData(this._books);
+    $('.modal').modal('hide');
+    document.querySelector('.title-input').value = '';
+    document.querySelector('.author-input').value = '';
+    document.querySelector('.pages-input').value = '';
+    document.querySelector('.read-input').value = '';
+    this._render();
   }
 
-  _cartClick(e){
-    e.preventDefault();
-    let parent = e.target.parentNode;
-    while (parent.tagName !== 'A') {
-      parent = parent.parentNode
-    }
-    const view = this._initView(parent.pathname);
-    this._render(view);
+  _render(){
+    const $tbody = document.querySelector('tbody');
+    this._toggleTableVisible();
+    $tbody.innerHTML = '';
+    this._books.forEach((b, i)=> {
+      const $book = this._createBook(b, i);
+      $tbody.appendChild($book);
+    });
     
   }
 
-  _itemPurchase(e){
-    const { detail: purchase } = e;
-    this._setCartItems(purchase)
-    this._addCartTotalCount(purchase.count)
+  _setData(data){
+    localStorage.setItem('books', JSON.stringify(data));
   }
 
-  _setCartItems(item){
-    if(this._cartItems.length === 0) {
-      this._cartItems.push(item);
-    }else{
-      const index = this._cartItems.findIndex(i => i.type === item.type);
-      if (index !== -1) {
-        this._cartItems[index] = { ...item, count: item.count + this._cartItems[index].count };
-      } else {
-        this._cartItems.push(item);
-      }
-    }
-  }
-
-  _activateLinks() {
-    const $navLinks = document.querySelectorAll('nav');
-    $navLinks.forEach(link => {
-      link.addEventListener('click', this._getActivatedPath.bind(this));
-    });
-  }
-
-  _addCartTotalCount(itemCount){
-    this._cartTotalCount += Number(itemCount);
-    const $cartCount = document.querySelector('.cart__item-count');
-    $cartCount.textContent = this._cartTotalCount > 100 ? '100+' : this._cartTotalCount;
-  }
-
-  _initView(path){
-    const componentName = path.slice(1);
-    const view = document.createElement('app-' + componentName);
-    if(componentName === 'cart'){
-      view.setAttribute('items', JSON.stringify(this._cartItems));
-    }
-    return view;
-  }
-
-  _childBtnClick(e){
-    const path = e.detail;
-    const view = this._initView(path);
-    this._render(view);
-  }
-
-  _buyJuiceClick(e){
-   const view =  document.createElement('app-shopping');
-   view.setAttribute('juice', e.detail.slice(1));
-   view.setAttribute('posY', localStorage.getItem('posY'));
-   this._render(view);
-  }
-
-  _getActivatedPath(e){
-    e.preventDefault();
-    const path = e.target.pathname;
-    const view = this._initView(path);
-    this._render(view);
-  }
-
-  _render(view){
-    window.scrollTo(0, 0);
-    this.innerHTML = '';
-    this.appendChild(view);
+  _getData(){
+    const data = JSON.parse(localStorage.getItem('books'));
+    return data || [];
   }
 
 }

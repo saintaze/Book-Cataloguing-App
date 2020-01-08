@@ -1,14 +1,11 @@
-# Restaurant-App
-A restaurant browsing and ordering app.
+# Book-Cataloguing-App
+An app where you can store information about the books and track whether you have read them or not.
 
 ### Features
 + Single Page Application (SPA) built entirely with Native JS
 + Native JS WebComponent Architecture
-+ Responsive and Clean Mordern Design
++ Responsive and Clean Modern Design
 + Webpack used for Tooling
-+ Dynamic Purchasing and Cart functionality (no checkout)
-+ Pagination to swap items
-
 
 ##### Built With
 + HTML5
@@ -23,7 +20,7 @@ clone repo
 run `npm start`
 
 # Live Version
-#### URL: [Start Browsing and Ordering Delicious Juices](https://restaurant.ayezahmed.now.sh )
+#### URL: [Start cataloguing your books](https://books.ayezahmed.now.sh/)
 
 # Author
 + Saintaze [@saintaze](https://github.com/saintaze/)
