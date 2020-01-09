@@ -22,10 +22,10 @@ clone repo
 run `npm start`
 
 # Live Version
-#### URL: [Start cataloguing your books](https://books.ayezahmed.now.sh/)
+#### URL: [Start Cataloguing Your Books](https://books.ayezahmed.now.sh/)
 
 # Author
-+ Saintaze [@saintaze](https://github.com/saintaze/)
+Saintaze [@saintaze](https://github.com/saintaze/)
 
 
 
